@@ -1,0 +1,7 @@
+appdirs
+fitparse
+geopy
+gpxpy
+jinja2
+overpy
+s2sphere

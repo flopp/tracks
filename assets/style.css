@@ -1,0 +1,34 @@
+#map {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+.infowindow {
+    background: white;
+    color: #333;
+    font-size: 14px;
+    padding: 0.8em;
+}
+.infowindow-table td {
+    padding: 0.1em;
+}
+
+.leaflet-prevnext {
+    display: table;
+}
+
+.leaflet-prevnext a {
+    border-bottom: none;
+    border-right: 1px solid #CCC;
+}
+
+.leaflef-prevnext a:last-child {
+    border-right: none;
+}
+
+.leaflet-prevnext-button {
+    display: table-cell;
+    font: bold 18px 'Lucida Console', Monaco, monospace;
+}
