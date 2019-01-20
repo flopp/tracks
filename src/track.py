@@ -1,4 +1,4 @@
-type#!/usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright 2018 Florian Pigorsch. All rights reserved.
 #
@@ -20,6 +20,7 @@ class Track:
     def __init__(self):
         self._file_name = None
         self._id = None
+        self._hash = None
         self._type = None
         self._start_time = None
         self._end_time = None
@@ -35,6 +36,7 @@ class Track:
     def clear(self):
         self._file_name = None
         self._id = None
+        self._hash = None
         self._type = None
         self._start_time = None
         self._end_time = None
@@ -59,7 +61,7 @@ class Track:
         if self._elapsed_time is not None:
             seconds = int(self._elapsed_time.total_seconds())
             hours = seconds // 3600
-            seconds -=  3600 * hours
+            seconds -= 3600 * hours
             minutes = seconds // 60
             seconds -= 60 * minutes
             title += f'; t={hours}:{minutes:02}:{seconds:02}'
@@ -259,7 +261,7 @@ class Track:
         with open(cache_file_name, 'r') as file:
             segment = []
             in_header = True
-            time = None
+            last_point = None
             for line in file:
                 line = line.strip()
                 if in_header:
@@ -268,9 +270,10 @@ class Track:
                         continue
                     key_value = line.split(':', 1)
                     key, value = key_value[0], key_value[1]
-                    if key == 'start':
+                    if key == 'hash':
+                        self._hash = value
+                    elif key == 'start':
                         self._start_time = deserialize_time(value)
-                        time = self._start_time
                     elif key == 'end':
                         self._end_time = deserialize_time(value)
                     elif key == 'distance':
@@ -290,9 +293,8 @@ class Track:
                         self._segments.append(segment)
                         segment = []
                 else:
-                    p = TrackPoint.deserialize(line, time)
-                    time = p._time
-                    segment.append(p)
+                    last_point = TrackPoint.deserialize(line, last_point)
+                    segment.append(last_point)
             if len(segment) != 0:
                 self._segments.append(segment)
         self._file_name = file_name
@@ -303,6 +305,7 @@ class Track:
         os.makedirs(os.path.dirname(cache_file_name), exist_ok=True)
         with open(cache_file_name, 'w') as file:
             header = [
+                ('hash', self._hash),
                 ('start', serialize_time(self._start_time)),
                 ('end', serialize_time(self._end_time))
             ]
@@ -319,22 +322,24 @@ class Track:
             for (key, value) in header:
                 file.write(f'{key}:{value}\n')
             file.write('---\n')
-            time = self._start_time
+
+            last_point = None
             for segment in self._segments:
                 for point in segment:
-                    file.write(point.serialize(time))
+                    file.write(point.serialize(last_point))
                     file.write('\n')
-                    time = point._time
+                    last_point = point
                 file.write('---\n')
 
-    def _map_track_type(self, t: Optional[str]) -> Optional[str]:
+    @staticmethod
+    def _map_track_type(t: Optional[str]) -> Optional[str]:
         if t is None:
             return None
         if (t == '1') or (t == 'cycling'):
             return 'Cycling'
         if (t == '9') or (t == 'running'):
             return 'Running'
-        if (t == 'trail_running'):
+        if t == 'trail_running':
             return 'Trail-Running'
         print(f'Cannot map track type: {t}')
         return None

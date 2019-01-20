@@ -16,12 +16,11 @@ def collect_files(directory: str, extensions: List[str]) -> Generator[str, None,
     abs_dir = os.path.abspath(directory)
     if not os.path.isdir(abs_dir):
         raise Exception(f'Not a directory: {directory}')
-    for name in os.listdir(abs_dir):
-        file_name = os.path.join(abs_dir, name)
-        if os.path.isfile(file_name):
+    for root, dirs, files in os.walk(abs_dir):
+        for file_name in files:
             for extension in extensions:
-                if name.endswith(extension):
-                    yield file_name
+                if file_name.endswith(extension):
+                    yield os.path.join(root, file_name)
 
 
 def serialize_time(d: datetime.datetime) -> str:

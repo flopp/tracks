@@ -213,10 +213,10 @@ function init() {
         subdomains: 'abc'
     });
 
-    map = L.map('map', {zoomDelta: 0.25, zoomSnap: 0, layers: [opentopomap, stamen_terrain]});
+    map = L.map('map', {zoomDelta: 0.25, zoomSnap: 0, layers: [stamen_terrain]});
 
-    var baseMaps = {'Terrain': stamen_terrain, 'Topo': opentopomap};
-    L.control.layers(baseMaps).addTo(map);
+    //var baseMaps = {'Terrain': stamen_terrain};
+    //L.control.layers(baseMaps).addTo(map);
 
     zoomFit = new ZoomFitControl();
     map.addControl(zoomFit);

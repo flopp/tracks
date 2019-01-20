@@ -1,10 +1,12 @@
-#map {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    font-family: 'Helvetica Neue',Arial,sans-serif;
+    font-size: 14px;
 }
+
+
 .infowindow {
     background: white;
     color: #333;
@@ -31,4 +33,107 @@
 .leaflet-prevnext-button {
     display: table-cell;
     font: bold 18px 'Lucida Console', Monaco, monospace;
+}
+
+.leaflet-right .leaflet-control {
+    margin-right: 0px;
+}
+
+.leaflet-control .control-button {
+    display: block;
+    height: 40px;
+    width: 40px;
+    line-height: 40px;
+    background-color: #333;
+    background-color: rgba(0,0,0,0.6);
+    border-radius: 4px 0 0 4px;
+    margin-bottom: 10px;
+    outline: none;
+    text-align: center;
+}
+
+.leaflet-control .control-button.active {
+    background-color: #9ed485;
+}
+
+.control-button.zoomin {
+    margin-bottom: 0px;
+    border-radius: 4px 0 0 0;
+}
+
+.control-button.zoomout {
+    margin-bottom: 0px;
+    margin-top: 0px;
+    border-radius: 0 0 0 0;
+}
+
+.control-button.zoomfit {
+    margin-top: 0px;
+    border-radius: 0 0 0 4px;
+}
+
+
+
+#map-layout {
+    overflow: hidden;
+    position: absolute;
+    top: 0px;
+    bottom: 0;
+    width: 100%;
+}
+#map {
+    height: 100%;
+    overflow: hidden;
+}
+#map-ui {
+    display: none;
+    position: relative;
+    float: right;
+    width: 250px;
+    height: 100%;
+    background: white;
+    overflow: auto;
+}
+
+
+.sidebar_heading {
+    position: relative;
+    padding: 10px 20px;
+}
+
+.sidebar_heading > .close {
+    float: right;
+    cursor: pointer;
+}
+
+.sidebar_heading > h4 {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+}
+
+.icon {
+    font-size: 20px;
+    color: #FFF;
+}
+
+.track-items {
+    list-style: none;
+    padding: 0;
+}
+
+.track-item {
+    cursor: pointer;
+    padding: 5px;
+}
+
+.track-item:hover {
+    background-color: #bbbbbb;
+    color: white;
+}
+
+.track-item.active {
+    background-color: #9ed485;
+    color: white;
 }

@@ -40,7 +40,8 @@ class Tracks:
     def load_tracks(self, directory: str):
         with concurrent.futures.ProcessPoolExecutor() as executor:
             future_to_file_name = {
-                executor.submit(self.load_track, self._cache_dir, file_name): file_name for file_name in utils.collect_files(directory, ['.fit', '.gpx'])
+                executor.submit(self.load_track, self._cache_dir, file_name):
+                    file_name for file_name in utils.collect_files(directory, ['.fit', '.gpx'])
             }
         for future in concurrent.futures.as_completed(future_to_file_name):
             file_name = future_to_file_name[future]
@@ -71,15 +72,18 @@ class Tracks:
     def load_track(cache_dir: str, file_name: str) -> Track:
         with open(file_name, 'rb') as file:
             raw_data_1024 = file.read(1024)
+        hash = utils.compute_hash(file_name, raw_data_1024)
         cache_file_name = os.path.join(
             cache_dir,
             'tracks',
-            utils.compute_hash(file_name, raw_data_1024)
+            hash
         )
         t = Track()
         if os.path.isfile(cache_file_name):
             t.load_from_cache(cache_file_name, file_name)
+            t._hash = hash
         else:
             t.load(file_name)
+            t._hash = hash
             t.save_to_cache(cache_file_name)
         return t
