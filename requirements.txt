@@ -3,5 +3,6 @@ fitparse
 geopy
 gpxpy
 jinja2
-overpy
+python-dateutil
+requests
 s2sphere

@@ -1,0 +1,3 @@
+[submodule "vendor/garminexport"]
+	path = vendor/garminexport
+	url = https://github.com/petergardfjall/garminexport.git
