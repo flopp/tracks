@@ -1,229 +1,284 @@
 var map = null;
-var infoWindow = null;
-var prevNext = null;
-var zoomFit = null;
+var polyline = null;
+var tracks = null;
+
+function zoomFit() {
+    if (!map || !polyline) {
+        return;
+    }
+    map.fitBounds(polyline.getBounds(), {padding: [16, 16]});
+}
+
+L.sidebar = function(selector) {
+    var control = {},
+        sidebar = $(selector),
+        current = $(),
+        currentButton  = $(),
+        map;
+
+    control.addTo = function (_) {
+        map = _;
+        return control;
+    };
+
+    control.addPane = function(pane) {
+        pane
+            .hide()
+            .appendTo(sidebar);
+    };
+
+    control.togglePane = function(pane, button) {
+        current
+            .hide()
+            .trigger('hide');
+
+        currentButton
+            .removeClass('active');
+
+        if (current === pane) {
+            $(sidebar).hide();
+            current = currentButton = $();
+        } else {
+            $(sidebar).show();
+            current = pane;
+            currentButton = button || $();
+        }
+
+        map.invalidateSize({pan: false, animate: false});
+
+        current
+            .show()
+            .trigger('show');
+
+        currentButton
+            .addClass('active');
+    };
+
+    return control;
+};
+
+L.tracks = function (options) {
+    var control = L.control(options),
+        tracksList = null;
+
+
+    control.onAdd = function (map) {
+        var $container = $('<div>')
+            .attr('class', 'control-tracks');
+
+        var button = $('<a>')
+            .attr('class', 'control-button')
+            .attr('href', '#')
+            .html('<span class="icon"><i class="fas fa-list-ul"></i></span>')
+            //.html('<span class="icon tracks"></span>')
+            .on('click', toggle)
+            .appendTo($container);
+
+        var $ui = $('<div>')
+            .attr('class', 'tracks-ui');
+
+        $('<div>')
+            .attr('class', 'sidebar_heading')
+            .appendTo($ui)
+            .append(
+                $('<span>')
+                    .attr('class', 'close')
+                    .html('<i class="fas fa-times"></i>')
+                    .bind('click', toggle))
+            .append(
+                $('<h4>')
+                .text('Tracks'));
+
+        tracksList = $('<ul>')
+            .attr('class', 'track-items')
+            .appendTo($ui);
+
+        data.forEach(function(track) {
+            var $li = $('<li>')
+                .attr('class', 'track-item')
+                .attr('data-id', track.hash)
+                .on('click', (function() {
+                    var hash = track.hash;
+                    return function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        load(hash);
+                    }
+                 })())
+                .appendTo(tracksList);
+
+            $('<span>')
+                .text(track.start_time)
+                .appendTo($li);
+            $('<br>').appendTo($li);
+            $('<span>')
+                .text(track.type)
+                .appendTo($li);
+            $('<br>').appendTo($li);
+            $('<span>')
+                .text(track.location)
+                .appendTo($li);
+            $('<br>').appendTo($li);
+            $('<span>')
+                .text(track.distance)
+                .appendTo($li);
+        });
+        options.sidebar.addPane($ui);
+
+        $ui
+            .on('show', shown)
+            .on('hide', hidden);
+
+        map.on('baselayerchange', updateButton);
+
+        updateButton();
+
+        function shown() {
+            map.on('zoomend baselayerchange', update);
+            //$section.load('/key', update);
+        }
+
+        function hidden() {
+            map.off('zoomend baselayerchange', update);
+        }
+
+        function toggle(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!button.hasClass('disabled')) {
+                options.sidebar.togglePane($ui, button);
+            }
+            //$('.leaflet-control .control-button').tooltip('hide');
+        }
+
+        function updateButton() {
+        }
+
+        function update() {
+        }
+
+        return $container[0];
+    };
+
+    control.activateTrack = function (hash) {
+        tracksList.children('li').each(function (i) {
+            var li_hash = $(this).data('id');
+            if (li_hash == hash) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    };
+
+    return control;
+};
+
+
+L.zoom = function (options) {
+    var control = L.control(options);
+
+    control.onAdd = function (map) {
+        var $container = $('<div>')
+            .attr('class', 'control-zoom');
+
+        $('<a>')
+            .attr('class', 'control-button zoomin')
+            .attr('href', '#')
+            .html('<span class="icon"><i class="fas fa-plus"></i></span>')
+            .on('click', click_zoomIn)
+            .on('dblclick', click_zoomIn)
+            .appendTo($container);
+
+        $('<a>')
+            .attr('class', 'control-button zoomout')
+            .attr('href', '#')
+            .html('<span class="icon"><i class="fas fa-minus"></i></span>')
+            .on('click', click_zoomOut)
+            .on('dblclick', click_zoomOut)
+            .appendTo($container);
+
+        $('<a>')
+            .attr('class', 'control-button zoomfit')
+            .attr('href', '#')
+            .html('<span class="icon"><i class="fas fa-expand-arrows-alt"></i></span>')
+            .on('click', click_zoomFit)
+            .on('dblclick', click_zoomFit)
+            .appendTo($container);
+
+        function click_zoomIn(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            map.zoomIn();
+        }
+
+        function click_zoomOut(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            map.zoomOut();
+        }
+
+        function click_zoomFit(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            zoomFit();
+        }
+
+        return $container[0];
+    };
+
+    return control;
+};
+
+
+function load(hash) {
+    url = '/assets/tracks/' + hash + '.json';
+    $.getJSON(url)
+        .done(function(data) {
+            tracks.activateTrack(hash);
+            if (polyline === null) {
+                polyline = L.polyline(data.polyline, {color: 'red'});
+                polyline.addTo(map);
+            } else {
+                polyline.setLatLngs(data.polyline);
+            }
+            zoomFit();
+        })
+        .fail(function() {
+            console.log("error");
+        });
+}
 
 function init() {
-    var InfoWindow = L.Control.extend({
-        options: {
-            position: 'bottomleft'
-        },
-
-        initialize: function () {
-            //this.toggleButton = null;
-
-            this.startTime = null;
-            this.endTime = null;
-            this.location = null;
-            this.distance = null;
-            this.elapsedTime = null;
-            this.timerTime = null;
-            this.activityType = null;
-            this.poi = null;
-
-            this.tr_startTime = null;
-            this.tr_location = null;
-            this.tr_distance = null;
-            this.tr_elapsedTime = null;
-            this.tr_timerTime = null;
-            this.tr_activityType = null;
-            this.tr_poi = null;
-        },
-
-        onAdd: function (map) {
-            var self = this;
-            var container = L.DomUtil.create('div', 'leaflet-bar infowindow');
-
-            var table = L.DomUtil.create('table', 'infowindow-table', container);
-
-            this.tr_startTime = this.createTr(table, "Time:", this.startTime);
-            this.tr_location = this.createTr(table, "Location:", this.location);
-            this.tr_poi = this.createTr(table, "POI:", this.poi);
-            this.tr_activityType = this.createTr(table, "Type:", this.activityType);
-            this.tr_distance = this.createTr(table, "Distance:", this.distance);
-            this.tr_timerTime = this.createTr(table, "Timer:", this.timerTime);
-            this.tr_elapsedTime = this.createTr(table, "Elapsed:", this.elapsedTime);
-            return container;
-        },
-
-        createTr: function(table, key, value) {
-            var tr = L.DomUtil.create('tr', 'row', table);
-            var td1 = L.DomUtil.create('th', 'key', tr);
-            td1.innerHTML = key;
-            var td2 = L.DomUtil.create('td', 'value', tr);
-            if (value !== null) {
-                td2.innerHTML = value;
-            } else {
-                td2.innerHTML = "n/a";
-            }
-            return tr;
-        },
-
-        updateTr: function(tr, value) {
-            if (tr === null) {
-                return;
-            }
-            var td = tr.childNodes[1];
-
-            if (value !== null) {
-                td.innerHTML = value;
-            } else {
-                td.innerHTML = "n/a";
-            }
-        },
-
-        setLocation: function (location) {
-            this.location = location;
-            this.updateTr(this.tr_location, location);
-        },
-
-        setStartTime: function (time) {
-            this.startTime = time;
-            this.updateTr(this.tr_startTime, time);
-        },
-
-        setEndTime: function (time) {
-        },
-
-        setType: function (t) {
-            this.activityType = t;
-            this.updateTr(this.tr_activityType, t);
-        },
-
-        setPOI: function (p) {
-            this.poi = p;
-            this.updateTr(this.tr_poi, p);
-        },
-
-        setDistance: function (distance) {
-            this.distance = distance;
-            this.updateTr(this.tr_distance, distance);
-        },
-
-        setElapsedTime: function (duration) {
-            this.elapsedTime = duration;
-            this.updateTr(this.tr_elapsedTime, duration);
-        },
-
-        setTimerTime: function (duration) {
-            this.timerTime = duration;
-            this.updateTr(this.tr_timerTime, duration);
-        },
-    });
-
-
-
-    var PrevNextControl = L.Control.extend({
-        options: {
-            position: 'topright'
-        },
-
-        initialize: function () {
-            this.prev = '#';
-            this.prevButton = null;
-            this.next = '#';
-            this.nextButton = null;
-        },
-
-        onAdd: function (map) {
-            var self = this;
-            var container = L.DomUtil.create('div', 'leaflet-prevnext leaflet-bar');
-
-            this.prevButton = L.DomUtil.create('a', 'leaflet-prevnext-button', container);
-            this.prevButton.setAttribute('role', 'button');
-            this.prevButton.innerHTML = '<';
-            this.prevButton.href = this.prev;
-            if (this.prev == '#') {
-                L.DomUtil.addClass(this.prevButton, 'leaflet-disabled');
-            }
-
-            this.nextButton = L.DomUtil.create('a', 'leaflet-prevnext-button', container);
-            this.nextButton.setAttribute('role', 'button');
-            this.nextButton.innerHTML = '>';
-            this.nextButton.href = this.next;
-            if (this.next == '#') {
-                L.DomUtil.addClass(this.nextButton, 'leaflet-disabled');
-            }
-
-            return container;
-        },
-
-        setPrev: function(url) {
-            this.prev = url;
-            if (this.prevButton) {
-                L.DomUtil.removeClass(this.prevButton, 'leaflet-disabled');
-                this.prevButton.href = url;
-            }
-        },
-
-        setNext: function(url) {
-            this.next = url;
-            if (this.nextButton) {
-                L.DomUtil.removeClass(this.nextButton, 'leaflet-disabled');
-                this.nextButton.href = url;
-            }
-        },
-    });
-
-    var ZoomFitControl = L.Control.extend({
-        options: {
-            position: 'topleft'
-        },
-
-        initialize: function () {
-            this.button = null;
-            this.function = null;
-        },
-
-        onAdd: function (map) {
-            var self = this;
-            var container = L.DomUtil.create('div', 'leaflet-bar');
-
-            this.button = L.DomUtil.create('a', 'leaflet-zoomfit-button', container);
-            this.button.setAttribute('role', 'button');
-            this.button.innerHTML = 'F';
-
-            if (this.function === null) {
-                L.DomUtil.addClass(this.button, 'leaflet-disabled');
-            } else {
-                this.button.onclick = this.function;
-            }
-
-            return container;
-        },
-
-        setFunction: function(f) {
-            this.function = f;
-            if (this.button) {
-                L.DomUtil.removeClass(this.button, 'leaflet-disabled');
-                this.button.onclick = f;
-            }
-        },
-    });
-
+    map = L.map('map', {zoomControl: false, zoomDelta: 0.25, zoomSnap: 0});
     var stamen_terrain = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg', {
         attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         maxZoom: 14,
         subdomains: 'abcd'
     });
+    //stamen_terrain.addTo(map);
 
     var opentopomap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
         attribution: 'Map tiles by <a href="http://opentopomap.org">OpenTopoMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         maxZoom: 15,
         subdomains: 'abc'
     });
+    opentopomap.addTo(map);
 
-    map = L.map('map', {zoomDelta: 0.25, zoomSnap: 0, layers: [stamen_terrain]});
+    map.setView([47.985285, 7.908278], 13);
 
-    //var baseMaps = {'Terrain': stamen_terrain};
-    //L.control.layers(baseMaps).addTo(map);
+    var sidebar = L.sidebar('#map-ui')
+        .addTo(map);
 
-    zoomFit = new ZoomFitControl();
-    map.addControl(zoomFit);
+    tracks = L.tracks({
+         position: 'topright',
+         sidebar: sidebar
+    }).addTo(map);
 
-    prevNext = new PrevNextControl();
-    map.addControl(prevNext);
+    L.zoom({
+         position: 'topright',
+         sidebar: sidebar
+    }).addTo(map);
 
-    infoWindow = new InfoWindow();
-    map.addControl(infoWindow);
+    load(data[0].hash);
 }

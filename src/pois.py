@@ -10,7 +10,7 @@ from .track import Track
 from .utils import distance
 
 
-class Peaks:
+class Pois:
     def __init__(self):
         self._pois = []
 

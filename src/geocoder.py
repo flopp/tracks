@@ -7,10 +7,12 @@ import geopy
 import os
 import s2sphere
 
+from .config import __agent__
+
 
 class Geocoder:
     def __init__(self):
-        self._geocoder = geopy.geocoders.Nominatim(user_agent='Static Activities, mail@flopp.net')
+        self._geocoder = geopy.geocoders.Nominatim(user_agent=__agent__)
         self._cache_dir = None
         self._cache = {}
 

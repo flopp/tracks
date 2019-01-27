@@ -9,15 +9,14 @@
 import argparse
 import datetime
 import os
+import shutil
 
-from src.htmlwriter import HtmlWriter
 from src.tracks import Tracks
 from vendor.garminexport.garminexport import (backup, garminclient, retryer)
 
 
-def sync(data_dir, username, password):
-    if not os.path.isdir(data_dir):
-        os.makedirs(data_dir)
+def sync(directory, username, password):
+    os.makedirs(directory, exist_ok=True)
     retry = retryer.Retryer(
         delay_strategy=retryer.ExponentialBackoffDelayStrategy(
             initial_delay=datetime.timedelta(seconds=1)),
@@ -25,43 +24,50 @@ def sync(data_dir, username, password):
     formats = ['fit']
     with garminclient.GarminClient(username, password) as client:
         activities = set(retry.call(client.list_activities))
-        missing_activities = backup.need_backup(activities, data_dir, formats)
+        print(f'{username} has {len(activities)} activities')
+        missing_activities = backup.need_backup(activities, directory, formats)
+        print(f'missing activities: {len(missing_activities)}')
         for activity in missing_activities:
-            backup.download(client, activity, retry, data_dir, formats)
+            activity_id, start = activity
+            print(f'fetching: {activity_id} / {start}')
+            backup.download(client, activity, retry, directory, formats)
+
+
+def copy_file(source, target):
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    shutil.copyfile(source, target)
 
 
 def main():
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument('--data-dir', dest='data_dir', metavar='DIR', type=str, required=True)
     args_parser.add_argument('--cache-dir', dest='cache_dir', metavar='DIR', type=str)
     args_parser.add_argument('--export-dir', dest='export_dir', metavar='DIR', type=str, default='export')
-    args_parser.add_argument('--templates-dir', dest='templates_dir', metavar='DIR', type=str, default='templates')
-    args_parser.add_argument('--assets-dir', dest='assets_dir', metavar='DIR', type=str, default='assets')
-    args_parser.add_argument('--base-url', dest='base_url', metavar='URL', type=str)
+    args_parser.add_argument('--sync', dest='sync', action='store_true')
     args_parser.add_argument('--clear-cache', dest='clear_cache', action='store_true')
     args = args_parser.parse_args()
 
-    print('syncing')
-    GARMIN_ACCOUNT = os.environ['GARMIN_ACCOUNT']
-    GARMIN_PASSWORD = os.environ['GARMIN_PASSWORD']
-    sync(os.path.join(args.data_dir, 'garmin-connect'), GARMIN_ACCOUNT, GARMIN_PASSWORD)
-    
-    print('loading')
     t = Tracks()
     t.set_poi_file('poi.txt')
+    t.set_export_dir(args.export_dir)
     if args.cache_dir:
         t.set_cache_dir(args.cache_dir)
     if args.clear_cache:
         t.clear_cache_dir()
-    t.load_tracks(args.data_dir)
 
-    print('exporting')
-    h = HtmlWriter()
-    h.set_export_dir(args.export_dir)
-    h.set_templates_dir(args.templates_dir)
-    h.set_assets_dir(args.assets_dir)
-    h.set_base_url(args.base_url)
-    h.export(t)
+    tracks_data_dir = os.path.join(t._cache_dir, 'garmin-connect')
+
+    if args.sync:
+        print('syncing')
+        GARMIN_ACCOUNT = os.environ['GARMIN_ACCOUNT']
+        GARMIN_PASSWORD = os.environ['GARMIN_PASSWORD']
+        sync(tracks_data_dir, GARMIN_ACCOUNT, GARMIN_PASSWORD)
+
+    print('loading & exporting')
+    t.load_tracks(tracks_data_dir)
+
+    copy_file('assets/index.html', os.path.join(args.export_dir, 'index.html'))
+    copy_file('assets/style.css', os.path.join(args.export_dir, 'assets', 'style.css'))
+    copy_file('assets/map.js', os.path.join(args.export_dir, 'assets', 'map.js'))
 
 
 if __name__ == '__main__':

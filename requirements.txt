@@ -2,7 +2,6 @@ appdirs
 fitparse
 geopy
 gpxpy
-jinja2
 python-dateutil
 requests
 s2sphere
