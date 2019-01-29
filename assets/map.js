@@ -1,5 +1,6 @@
 var map = null;
 var polyline = null;
+var circles = null;
 var tracks = null;
 
 function zoomFit() {
@@ -102,7 +103,7 @@ L.tracks = function (options) {
                     return function(e) {
                         e.stopPropagation();
                         e.preventDefault();
-                        load(hash);
+                        load(hash, track.pois);
                     }
                  })())
                 .appendTo(tracksList);
@@ -231,7 +232,7 @@ L.zoom = function (options) {
 };
 
 
-function load(hash) {
+function load(hash, pois) {
     url = '/assets/tracks/' + hash + '.json';
     $.getJSON(url)
         .done(function(data) {
@@ -242,6 +243,21 @@ function load(hash) {
             } else {
                 polyline.setLatLngs(data.polyline);
             }
+
+            if (circles) {
+                circles.forEach(function(circle) {
+                    map.removeLayer(circle);
+                });
+                circles = null;
+            }
+
+            circles = [];
+            pois.forEach(function(poi) {
+                circle = L.circle(L.latLng(poi.lat, poi.lng), {radius: 100, color: 'blue'});
+                circle.addTo(map);
+                circles.push(circle);
+            });
+
             zoomFit();
         })
         .fail(function() {

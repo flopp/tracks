@@ -72,7 +72,12 @@ class Tracks:
                 self._write_field(file, 'start_time', track._start_time, self._format_time)
                 self._write_field(file, 'timer_time', track._timer_time, self._format_timedelta)
                 self._write_field(file, 'elapsed_time', track._elapsed_time, self._format_timedelta)
-                self._write_field(file, 'pois', track._pois, self._format_list)
+                file.write(f'"pois": [\n')
+                for poi in track._pois:
+                    latlng = self._pois.get_coordinates(poi)
+                    if latlng is not None:
+                        file.write(f'{{"name": "{poi}", "lat": {latlng.lat().degrees:.5f}, "lng": {latlng.lng().degrees:.5f}}},\n')
+                file.write(f']\n')
                 file.write('},\n')
             file.write('];\n')
 

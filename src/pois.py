@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file.
 
 import s2sphere
-from typing import List
+from typing import (List, Optional)
 
 from .track import Track
 from .utils import distance
@@ -49,3 +49,9 @@ class Pois:
                     if len(candidates) == 0:
                         return pois
         return pois
+
+    def get_coordinates(self, name: str) -> Optional[s2sphere.LatLng]:
+        for poi in self._pois:
+            if poi[0] == name:
+                return poi[1]
+        return None

@@ -9,7 +9,7 @@
 import argparse
 import datetime
 import os
-import shutil
+import time
 
 from src.tracks import Tracks
 from vendor.garminexport.garminexport import (backup, garminclient, retryer)
@@ -33,9 +33,13 @@ def sync(directory, username, password):
             backup.download(client, activity, retry, directory, formats)
 
 
-def copy_file(source, target):
+def copy_file(source, target, timestamp):
     os.makedirs(os.path.dirname(target), exist_ok=True)
-    shutil.copyfile(source, target)
+    with open(source, 'r') as f:
+        data = f.read()
+    data = data.replace('{{TIMESTAMP}}', timestamp)
+    with open(target, 'w') as f:
+        f.write(data)
 
 
 def main():
@@ -68,9 +72,10 @@ def main():
     print('loading & exporting')
     t.load_tracks(tracks_data_dir)
 
-    copy_file('assets/index.html', os.path.join(args.export_dir, 'index.html'))
-    copy_file('assets/style.css', os.path.join(args.export_dir, 'assets', 'style.css'))
-    copy_file('assets/map.js', os.path.join(args.export_dir, 'assets', 'map.js'))
+    timestamp = f'{int(time.time())}'
+    copy_file('assets/index.html', os.path.join(args.export_dir, 'index.html'), timestamp)
+    copy_file('assets/style.css', os.path.join(args.export_dir, 'assets', 'style.css'), timestamp)
+    copy_file('assets/map.js', os.path.join(args.export_dir, 'assets', 'map.js'), timestamp)
 
 
 if __name__ == '__main__':
