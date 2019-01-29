@@ -42,12 +42,14 @@ def main():
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument('--cache-dir', dest='cache_dir', metavar='DIR', type=str)
     args_parser.add_argument('--export-dir', dest='export_dir', metavar='DIR', type=str, default='export')
+    args_parser.add_argument('--poi-file', dest='poi_file', metavar='FILE', type=str)
     args_parser.add_argument('--sync', dest='sync', action='store_true')
     args_parser.add_argument('--clear-cache', dest='clear_cache', action='store_true')
     args = args_parser.parse_args()
 
     t = Tracks()
-    t.set_poi_file('poi.txt')
+    if args.poi_file:
+        t.set_poi_file(args.poi_file)
     t.set_export_dir(args.export_dir)
     if args.cache_dir:
         t.set_cache_dir(args.cache_dir)
@@ -55,6 +57,7 @@ def main():
         t.clear_cache_dir()
 
     tracks_data_dir = os.path.join(t._cache_dir, 'garmin-connect')
+    os.makedirs(tracks_data_dir, exist_ok=True)
 
     if args.sync:
         print('syncing')
