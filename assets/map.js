@@ -119,6 +119,12 @@ L.tracks = function (options) {
             $('<span>')
                 .text(track.location)
                 .appendTo($li);
+            if (track.pois.length > 0) {
+                $('<br>').appendTo($li);
+                $('<span>')
+                    .text(track.pois.map(p => p.name).join(', '))
+                    .appendTo($li);
+            }
             $('<br>').appendTo($li);
             $('<span>')
                 .text(track.distance)
