@@ -302,5 +302,5 @@ function init() {
          sidebar: sidebar
     }).addTo(map);
 
-    load(data[0].hash);
+    load(data[0].hash, data[0].pois);
 }
