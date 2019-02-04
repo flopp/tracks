@@ -28,6 +28,8 @@ class Pois:
                 )
 
     def get_pois(self, track: Track) -> List[str]:
+        if track._bbox is None:
+            return []
         candidates = []
         for poi in self._pois:
             latlng = poi[1]

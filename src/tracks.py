@@ -6,6 +6,8 @@
 import appdirs
 import os
 import shutil
+import sys
+import traceback
 
 from .config import (__app_name__, __author__)
 from .geocoder import Geocoder
@@ -43,6 +45,8 @@ class Tracks:
             print(f'loading: {file_name}')
             try:
                 t = self.load_track(file_name)
+                if t._start_time is None:
+                    continue
                 with open(os.path.join(self._export_dir, 'assets', 'tracks', f'{t._hash}.json'), 'w') as file:
                     file.write('{"polyline":  [')
                     first = True
@@ -58,6 +62,7 @@ class Tracks:
                 self._tracks.append(t)
             except Exception as e:
                 print(f'Error while loading {file_name}: {e}')
+                traceback.print_exception(*sys.exc_info())
                 continue
         self._tracks.sort(key=lambda t: t._start_time, reverse=True)
 
@@ -88,11 +93,14 @@ class Tracks:
         cache_file_name = os.path.join(self._cache_dir, 'tracks', file_hash)
         t = Track()
         if os.path.isfile(cache_file_name):
-            print('cached')
             t.load_from_cache(cache_file_name, file_name)
             t._hash = file_hash
         else:
-            t.load(file_name)
+            try:
+                t.load(file_name)
+            except Exception as e:
+                print(f'Execption during file load: {e}')
+                t._error = "Error while loading file"
             t._hash = file_hash
             t.save_to_cache(cache_file_name)
         t._pois = self._pois.get_pois(t)

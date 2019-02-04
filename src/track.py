@@ -18,8 +18,8 @@ from .utils import serialize_time, deserialize_time
 
 class Track:
     def __init__(self):
+        self._error = None
         self._file_name = None
-        self._id = None
         self._hash = None
         self._type = None
         self._start_time = None
@@ -34,8 +34,8 @@ class Track:
         self._pois = []
 
     def clear(self):
+        self._error = None
         self._file_name = None
-        self._id = None
         self._hash = None
         self._type = None
         self._start_time = None
@@ -48,9 +48,6 @@ class Track:
         self._location = None
         self._bbox = None
         self._pois = []
-
-    def get_id(self):
-        return self._id
 
     def get_title(self):
         title = self._start_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -68,6 +65,7 @@ class Track:
         return title
 
     def load(self, file_name: str):
+        self._segments = []
         if file_name.endswith('.fit'):
             self._load_fit(file_name)
         elif file_name.endswith('.gpx'):
@@ -75,7 +73,6 @@ class Track:
         else:
             raise Exception(f'Unknown file type: {file_name}')
         self._file_name = file_name
-        self._compute_id()
         self._compute_bbox()
 
     def get_start_pos(self):
@@ -83,12 +80,6 @@ class Track:
             for point in segment:
                 return point._lat_lng
         return None
-
-    def _compute_id(self):
-        assert self._file_name is not None
-        assert self._start_time is not None
-        file_base = os.path.splitext(os.path.basename(self._file_name))[0]
-        self._id = self._start_time.strftime('%Y-%m-%d') + '_' + file_base
 
     def _compute_bbox(self):
         self._bbox = s2sphere.LatLngRect()
@@ -286,6 +277,8 @@ class Track:
                         self._location = value
                     elif key == 'type':
                         self._type = value
+                    elif key == 'error':
+                        self._error = value
                     else:
                         print(f'unknown header line: {line}')
                 elif line.startswith('---'):
@@ -298,8 +291,6 @@ class Track:
             if len(segment) != 0:
                 self._segments.append(segment)
         self._file_name = file_name
-        self._compute_id()
-        self._compute_bbox()
 
     def save_to_cache(self, cache_file_name: str):
         os.makedirs(os.path.dirname(cache_file_name), exist_ok=True)
@@ -309,6 +300,8 @@ class Track:
                 ('start', serialize_time(self._start_time)),
                 ('end', serialize_time(self._end_time))
             ]
+            if self._error is not None:
+                header.append(('error', self._error))
             if self._distance is not None:
                 header.append(('distance', f'{self._distance:.1f}'))
             if self._elapsed_time is not None:
