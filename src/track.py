@@ -105,14 +105,13 @@ class Track:
         segment = []
         debug = False
         for message in fit.get_messages():
-            # print(message)
             if debug:
                 print(message.mesg_type.name if message.mesg_type is not None else message.mesg_type)
                 print(message.get_values())
             if message.mesg_type is not None:
                 if message.mesg_type.name == 'session':
                     self._parse_fit_session_message(message)
-                elif (message.mesg_type.name == 'sport') or (message.mesg_type.name == 'lap') :
+                elif (message.mesg_type.name == 'sport') or (message.mesg_type.name == 'lap'):
                     self._parse_fit_sport_message(message)
                 elif message.mesg_type.name == 'event':
                     event = message.get_values()['event']

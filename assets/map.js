@@ -181,6 +181,99 @@ L.tracks = function (options) {
     return control;
 };
 
+L.layers = function (options) {
+    var control = L.control(options),
+        layersList = null;
+
+
+    control.onAdd = function (map) {
+        var $container = $('<div>')
+            .attr('class', 'layers-tracks');
+
+        var button = $('<a>')
+            .attr('class', 'control-button')
+            .attr('href', '#')
+            .html('<span class="icon"><i class="fas fa-layer-group"></i></span>')
+            .on('click', toggle)
+            .appendTo($container);
+
+        var $ui = $('<div>')
+            .attr('class', 'layers-ui');
+
+        $('<div>')
+            .attr('class', 'sidebar_heading')
+            .appendTo($ui)
+            .append(
+                $('<span>')
+                    .attr('class', 'close')
+                    .html('<i class="fas fa-times"></i>')
+                    .bind('click', toggle))
+            .append(
+                $('<h4>')
+                .text('Layers'));
+
+        layersList = $('<ul>')
+            .attr('class', 'layers-items')
+            .appendTo($ui);
+
+        options.layers.forEach(function(layer) {
+            var $li = $('<li>')
+                .attr('class', 'layers-item')
+                .on('click', (function() {
+                    var all = options.layers;
+                    var lay = layer;
+                    return function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log(lay);
+                        all.forEach(function(other) {
+                            if (other['layer'] == lay['layer']) {
+                                map.addLayer(other['layer'])
+                            } else {
+                                map.removeLayer(other['layer'])
+                            }
+                        });
+                        map.fire('baselayerchange', {layer: lay['layer']});
+                    }
+                 })())
+                .appendTo(layersList);
+
+            $('<span>')
+                .text(layer['name'])
+                .appendTo($li);
+
+            map.on('layeradd layerremove', function() {
+                $li.toggleClass('active', map.hasLayer(layer['layer']));
+            });
+        });
+        options.sidebar.addPane($ui);
+
+        map.addLayer(options.layers[0].layer)
+
+        function toggle(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!button.hasClass('disabled')) {
+                options.sidebar.togglePane($ui, button);
+            }
+        }
+
+        return $container[0];
+    };
+
+    control.activateTrack = function (hash) {
+        tracksList.children('li').each(function (i) {
+            var li_hash = $(this).data('id');
+            if (li_hash == hash) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    };
+
+    return control;
+};
 
 L.zoom = function (options) {
     var control = L.control(options);
@@ -273,19 +366,23 @@ function load(hash, pois) {
 
 function init() {
     map = L.map('map', {zoomControl: false, zoomDelta: 0.25, zoomSnap: 0});
+
     var stamen_terrain = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg', {
         attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         maxZoom: 14,
         subdomains: 'abcd'
     });
-    //stamen_terrain.addTo(map);
 
     var opentopomap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
         attribution: 'Map tiles by <a href="http://opentopomap.org">OpenTopoMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         maxZoom: 15,
         subdomains: 'abc'
     });
-    opentopomap.addTo(map);
+
+    var baseLayers = [
+        {name: 'Stamen/Terrain', layer: stamen_terrain},
+        {name: 'OpenTopoMap', layer: opentopomap}
+    ];
 
     map.setView([47.985285, 7.908278], 13);
 
@@ -295,6 +392,12 @@ function init() {
     tracks = L.tracks({
          position: 'topright',
          sidebar: sidebar
+    }).addTo(map);
+
+    L.layers({
+        position: 'topright',
+        sidebar: sidebar,
+        layers: baseLayers
     }).addTo(map);
 
     L.zoom({

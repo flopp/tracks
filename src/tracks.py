@@ -81,7 +81,9 @@ class Tracks:
                 for poi in track._pois:
                     latlng = self._pois.get_coordinates(poi)
                     if latlng is not None:
-                        file.write(f'{{"name": "{poi}", "lat": {latlng.lat().degrees:.5f}, "lng": {latlng.lng().degrees:.5f}}},\n')
+                        file.write(f'{{"name": "{poi}", \
+                                    "lat": {latlng.lat().degrees:.5f}, \
+                                    "lng": {latlng.lng().degrees:.5f}}},\n')
                 file.write(f']\n')
                 file.write('},\n')
             file.write('];\n')
@@ -99,7 +101,7 @@ class Tracks:
             try:
                 t.load(file_name)
             except Exception as e:
-                print(f'Execption during file load: {e}')
+                print(f'Exception during file load: {e}')
                 t._error = "Error while loading file"
             t._hash = file_hash
             t.save_to_cache(cache_file_name)

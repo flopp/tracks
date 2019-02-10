@@ -137,3 +137,23 @@ body {
     background-color: #9ed485;
     color: white;
 }
+
+.layers-items {
+    list-style: none;
+    padding: 0;
+}
+
+.layers-item {
+    cursor: pointer;
+    padding: 5px;
+}
+
+.layers-item:hover {
+    background-color: #bbbbbb;
+    color: white;
+}
+
+.layers-item.active {
+    background-color: #9ed485;
+    color: white;
+}
