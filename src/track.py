@@ -306,6 +306,7 @@ class Track:
             if len(segment) != 0:
                 self._segments.append(segment)
         self._file_name = file_name
+        self._compute_bbox()
 
     def save_to_cache(self, cache_file_name: str):
         os.makedirs(os.path.dirname(cache_file_name), exist_ok=True)

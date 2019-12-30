@@ -123,6 +123,7 @@ class Tracks:
             t._hash = file_hash
             t.save_to_cache(cache_file_name)
         t._pois = self._pois.get_pois(t)
+        print(f"{file_name} -> {t._pois}")
         if t._location is None:
             latlng = t.get_start_pos()
             if latlng is not None:
