@@ -9,7 +9,7 @@ import shutil
 import sys
 import traceback
 
-from .config import (__app_name__, __author__)
+from .config import __app_name__, __author__
 from .geocoder import Geocoder
 from .pois import Pois
 from .track import Track
@@ -40,59 +40,76 @@ class Tracks:
             shutil.rmtree(self._cache_dir)
 
     def load_tracks(self, directory: str):
-        os.makedirs(os.path.join(self._export_dir, 'assets', 'tracks'), exist_ok=True)
-        for file_name in utils.collect_files(directory, ['.fit', '.gpx']):
-            print(f'loading: {file_name}')
+        os.makedirs(os.path.join(self._export_dir, "assets", "tracks"), exist_ok=True)
+        for file_name in utils.collect_files(directory, [".fit", ".gpx"]):
+            print(f"loading: {file_name}")
             try:
                 t = self.load_track(file_name)
                 if t._start_time is None:
                     continue
-                with open(os.path.join(self._export_dir, 'assets', 'tracks', f'{t._hash}.json'), 'w') as file:
+                with open(
+                    os.path.join(
+                        self._export_dir, "assets", "tracks", f"{t._hash}.json"
+                    ),
+                    "w",
+                ) as file:
                     file.write('{"polyline":  [')
                     first = True
                     for segment in t._segments:
                         for point in segment:
                             if not first:
-                                file.write(',')
+                                file.write(",")
                             else:
                                 first = False
-                            file.write(f'\n[{point._lat_lng.lat().degrees:.5f},{point._lat_lng.lng().degrees:.5f}]')
-                    file.write('\n]}\n')
+                            file.write(
+                                f"\n[{point._lat_lng.lat().degrees:.5f},{point._lat_lng.lng().degrees:.5f}]"
+                            )
+                    file.write("\n]}\n")
                     t._segments = None
                 self._tracks.append(t)
             except Exception as e:
-                print(f'Error while loading {file_name}: {e}')
+                print(f"Error while loading {file_name}: {e}")
                 traceback.print_exception(*sys.exc_info())
                 continue
         self._tracks.sort(key=lambda t: t._start_time, reverse=True)
 
-        with open(os.path.join(self._export_dir, 'assets', 'data.js'), 'w') as file:
-            file.write('const data = [\n')
+        with open(os.path.join(self._export_dir, "assets", "data.js"), "w") as file:
+            file.write("const data = [\n")
             for track in self._tracks:
-                file.write('{\n')
-                self._write_field(file, 'hash', track._hash)
-                self._write_field(file, 'type', track._type)
-                self._write_field(file, 'location', track._location)
-                self._write_field(file, 'distance', track._distance, self._format_distance)
-                self._write_field(file, 'start_time', track._start_time, self._format_time)
-                self._write_field(file, 'timer_time', track._timer_time, self._format_timedelta)
-                self._write_field(file, 'elapsed_time', track._elapsed_time, self._format_timedelta)
+                file.write("{\n")
+                self._write_field(file, "hash", track._hash)
+                self._write_field(file, "type", track._type)
+                self._write_field(file, "location", track._location)
+                self._write_field(
+                    file, "distance", track._distance, self._format_distance
+                )
+                self._write_field(
+                    file, "start_time", track._start_time, self._format_time
+                )
+                self._write_field(
+                    file, "timer_time", track._timer_time, self._format_timedelta
+                )
+                self._write_field(
+                    file, "elapsed_time", track._elapsed_time, self._format_timedelta
+                )
                 file.write(f'"pois": [\n')
                 for poi in track._pois:
                     latlng = self._pois.get_coordinates(poi)
                     if latlng is not None:
-                        file.write(f'{{"name": "{poi}", \
+                        file.write(
+                            f'{{"name": "{poi}", \
                                     "lat": {latlng.lat().degrees:.5f}, \
-                                    "lng": {latlng.lng().degrees:.5f}}},\n')
-                file.write(f']\n')
-                file.write('},\n')
-            file.write('];\n')
+                                    "lng": {latlng.lng().degrees:.5f}}},\n'
+                        )
+                file.write(f"]\n")
+                file.write("},\n")
+            file.write("];\n")
 
     def load_track(self, file_name: str) -> Track:
-        with open(file_name, 'rb') as file:
+        with open(file_name, "rb") as file:
             raw_data_1024 = file.read(1024)
         file_hash = utils.compute_hash(file_name, raw_data_1024)
-        cache_file_name = os.path.join(self._cache_dir, 'tracks', file_hash)
+        cache_file_name = os.path.join(self._cache_dir, "tracks", file_hash)
         t = Track()
         if os.path.isfile(cache_file_name):
             t.load_from_cache(cache_file_name, file_name)
@@ -101,7 +118,7 @@ class Tracks:
             try:
                 t.load(file_name)
             except Exception as e:
-                print(f'Exception during file load: {e}')
+                print(f"Exception during file load: {e}")
                 t._error = "Error while loading file"
             t._hash = file_hash
             t.save_to_cache(cache_file_name)
@@ -113,7 +130,7 @@ class Tracks:
         return t
 
     @staticmethod
-    def _write_field(file, label, value, formatter = None):
+    def _write_field(file, label, value, formatter=None):
         if value is None:
             file.write(f'"{label}": "n/a",\n')
         elif formatter is None:
@@ -140,4 +157,4 @@ class Tracks:
 
     @staticmethod
     def _format_list(value):
-        return '[' + ', '.join([f'"{v}"' for v in value]) + ']'
+        return "[" + ", ".join([f'"{v}"' for v in value]) + "]"

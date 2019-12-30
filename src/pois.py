@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file.
 
 import s2sphere
-from typing import (List, Optional)
+from typing import List, Optional
 
 from .track import Track
 from .utils import distance
@@ -19,12 +19,16 @@ class Pois:
         with open(file_name) as f:
             for line in f:
                 line = line.strip()
-                split_line = line.split(';')
+                split_line = line.split(";")
                 if len(split_line) != 3:
                     continue
                 self._pois.append(
-                    (split_line[2],
-                     s2sphere.LatLng.from_degrees(float(split_line[0]), float(split_line[1])))
+                    (
+                        split_line[2],
+                        s2sphere.LatLng.from_degrees(
+                            float(split_line[0]), float(split_line[1])
+                        ),
+                    )
                 )
 
     def get_pois(self, track: Track) -> List[str]:

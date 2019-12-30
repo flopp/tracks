@@ -22,7 +22,7 @@ class Geocoder:
     def get_location(self, latlng: s2sphere.LatLng) -> str:
         lat1000 = int(round(latlng.lat().degrees * 1000))
         lng1000 = int(round(latlng.lng().degrees * 1000))
-        key = f'{lat1000}:{lng1000}'
+        key = f"{lat1000}:{lng1000}"
 
         if key in self._cache:
             return self._cache[key]
@@ -30,12 +30,12 @@ class Geocoder:
         if self._load_cache(key):
             return self._cache[key]
 
-        location = self._geocoder.reverse(f'{lat1000 * 0.001:f}, {lng1000 * 0.001:f}')
-        if 'address' in location.raw:
-            address = location.raw['address']
-            country = address['country'] if 'country' in address else None
+        location = self._geocoder.reverse(f"{lat1000 * 0.001:f}, {lng1000 * 0.001:f}")
+        if "address" in location.raw:
+            address = location.raw["address"]
+            country = address["country"] if "country" in address else None
             city = None
-            for city_key in ['hamlet', 'village', 'town', 'city']:
+            for city_key in ["hamlet", "village", "town", "city"]:
                 if city_key in address:
                     city = address[city_key]
                     break
@@ -45,18 +45,18 @@ class Geocoder:
             if country is not None:
                 a.append(country)
             if len(a) > 0:
-                self._cache[key] = ', '.join(a)
+                self._cache[key] = ", ".join(a)
             else:
-                self._cache[key] = 'Unknown'
+                self._cache[key] = "Unknown"
         else:
-            self._cache[key] = 'Unknown'
+            self._cache[key] = "Unknown"
 
         self._store_cache(key)
 
         return self._cache[key]
 
     def _load_cache(self, key: str) -> bool:
-        cache_file_name = os.path.join(self._cache_dir, 'location', key)
+        cache_file_name = os.path.join(self._cache_dir, "location", key)
         if os.path.isfile(cache_file_name):
             with open(cache_file_name) as file:
                 self._cache[key] = file.read()
@@ -64,8 +64,7 @@ class Geocoder:
         return False
 
     def _store_cache(self, key: str):
-        cache_file_name = os.path.join(self._cache_dir, 'location', key)
+        cache_file_name = os.path.join(self._cache_dir, "location", key)
         os.makedirs(os.path.dirname(cache_file_name), exist_ok=True)
-        with open(cache_file_name, 'w') as file:
+        with open(cache_file_name, "w") as file:
             file.write(self._cache[key])
-
